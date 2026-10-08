@@ -1,0 +1,2370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PodSense NLP Analyzer</title>
+
+  <style>
+    :root {
+      --primary: #9333ea;
+      --primary-dark: #7e22ce;
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --positive: #15803d;
+      --negative: #dc2626;
+      --neutral: #b45309;
+      --info: #0369a1;
+      --danger: #dc2626;
+      --shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+    }
+
+    body.dark {
+      --bg: #0f172a;
+      --card: #172033;
+      --text: #f1f5f9;
+      --muted: #aab5c5;
+      --border: #2d3a50;
+      --shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--text);
+      background: var(--bg);
+      font-family: Arial, Helvetica, sans-serif;
+      transition: background 0.25s, color 0.25s;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .auth-wrapper {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background:
+        radial-gradient(circle at top right, rgba(147, 51, 234, 0.25), transparent 35%),
+        var(--bg);
+    }
+
+    .auth-card {
+      width: min(440px, 100%);
+      padding: 30px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      color: var(--primary);
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .auth-card h1 {
+      margin: 12px 0 8px;
+      font-size: 29px;
+    }
+
+    .auth-card p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .demo-box {
+      margin: 20px 0;
+      padding: 13px;
+      background: rgba(147, 51, 234, 0.09);
+      border: 1px solid rgba(147, 51, 234, 0.25);
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px 13px;
+      color: var(--text);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 250px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.13);
+    }
+
+    .btn {
+      padding: 11px 16px;
+      border-radius: 10px;
+      font-weight: 700;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      transform: none;
+    }
+
+    .btn-primary {
+      color: white;
+      background: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      color: #273449;
+      background: #e8edf5;
+    }
+
+    body.dark .btn-secondary {
+      color: #e5e7eb;
+      background: #29364d;
+    }
+
+    .btn-danger {
+      color: white;
+      background: var(--danger);
+    }
+
+    .btn-success {
+      color: white;
+      background: var(--positive);
+    }
+
+    .btn-warning {
+      color: white;
+      background: #d97706;
+    }
+
+    .message {
+      min-height: 22px;
+      margin-top: 12px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .success {
+      color: var(--positive);
+    }
+
+    .error {
+      color: var(--danger);
+    }
+
+    .app-shell {
+      min-height: 100vh;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      min-height: 72px;
+      padding: 14px 28px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-left,
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .topbar-title {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .user-badge {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: calc(100vh - 72px);
+    }
+
+    .sidebar {
+      padding: 24px 15px;
+      background: var(--card);
+      border-right: 1px solid var(--border);
+    }
+
+    .nav-btn {
+      width: 100%;
+      margin-bottom: 8px;
+      padding: 13px 15px;
+      color: var(--muted);
+      text-align: left;
+      background: transparent;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    .nav-btn:hover,
+    .nav-btn.active {
+      color: var(--primary);
+      background: rgba(147, 51, 234, 0.12);
+    }
+
+    .content {
+      width: 100%;
+      max-width: 1500px;
+      margin: auto;
+      padding: 28px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .page-header h1 {
+      margin-bottom: 7px;
+      font-size: 30px;
+    }
+
+    .page-header p {
+      color: var(--muted);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .stat-card,
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-card {
+      padding: 19px;
+    }
+
+    .stat-label {
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      font-size: 30px;
+      font-weight: 800;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(350px, 0.85fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      margin-bottom: 20px;
+      padding: 22px;
+    }
+
+    .card h2 {
+      margin-bottom: 7px;
+      font-size: 20px;
+    }
+
+    .card-subtitle {
+      margin-bottom: 18px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .file-label {
+      display: inline-flex;
+      align-items: center;
+      padding: 11px 16px;
+      color: #273449;
+      background: #e8edf5;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    body.dark .file-label {
+      color: #e5e7eb;
+      background: #29364d;
+    }
+
+    .file-label input {
+      display: none;
+    }
+
+    .result-box {
+      min-height: 180px;
+      padding: 16px;
+      background: rgba(127, 127, 127, 0.04);
+      border: 1px dashed var(--border);
+      border-radius: 13px;
+    }
+
+    .empty-state {
+      padding: 60px 15px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .result-item {
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .result-item small {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+
+    .result-item strong {
+      font-size: 17px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .badge-positive {
+      color: #166534;
+      background: #dcfce7;
+    }
+
+    .badge-negative {
+      color: #991b1b;
+      background: #fee2e2;
+    }
+
+    .badge-neutral {
+      color: #92400e;
+      background: #fef3c7;
+    }
+
+    .badge-info {
+      color: #1d4ed8;
+      background: #dbeafe;
+    }
+
+    .badge-score {
+      color: #155e75;
+      background: #cffafe;
+    }
+
+    body.dark .badge-positive {
+      color: #bbf7d0;
+      background: #14532d;
+    }
+
+    body.dark .badge-negative {
+      color: #fecaca;
+      background: #7f1d1d;
+    }
+
+    body.dark .badge-neutral {
+      color: #fde68a;
+      background: #78350f;
+    }
+
+    body.dark .badge-info {
+      color: #bfdbfe;
+      background: #1e3a8a;
+    }
+
+    body.dark .badge-score {
+      color: #a5f3fc;
+      background: #164e63;
+    }
+
+    .keyword-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .topic-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .topic-row {
+      display: grid;
+      grid-template-columns: 130px 1fr 45px;
+      gap: 10px;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .bar {
+      height: 12px;
+      overflow: hidden;
+      background: var(--border);
+      border-radius: 999px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: inherit;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .timeline-item {
+      padding: 12px;
+      border-left: 4px solid var(--primary);
+      background: rgba(127, 127, 127, 0.06);
+      border-radius: 8px;
+    }
+
+    .timeline-item strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .transcript-mark {
+      padding: 2px 4px;
+      color: #713f12;
+      background: #fde68a;
+      border-radius: 4px;
+    }
+
+    body.dark .transcript-mark {
+      color: #422006;
+      background: #facc15;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .history-item {
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .history-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .history-title {
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .history-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .footer-note {
+      margin-top: 15px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @media (max-width: 1050px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 15px;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 12px;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .nav-btn {
+        width: auto;
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      .content {
+        padding: 18px 14px;
+      }
+
+      .page-header {
+        flex-direction: column;
+      }
+
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 470px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- LOGIN -->
+  <section id="loginPage" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="brand">PodSense</div>
+
+      <h1>Podcast NLP Analyzer</h1>
+
+      <p>
+        Analyze podcast transcripts for sentiment, topics, keywords,
+        highlights, and chapters.
+      </p>
+
+      <div class="demo-box">
+        <strong>Demo login</strong><br />
+        Email: demo@podcast.com<br />
+        Password: Podcast@123
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginEmail">Email address</label>
+          <input
+            id="loginEmail"
+            type="email"
+            placeholder="Enter your email"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input
+            id="loginPassword"
+            type="password"
+            placeholder="Enter your password"
+            required
+          />
+        </div>
+
+        <button class="btn btn-primary" type="submit" style="width: 100%;">
+          Login
+        </button>
+
+        <div id="loginMessage" class="message"></div>
+      </form>
+
+      <div class="footer-note">
+        Educational browser-only prototype.
+      </div>
+    </div>
+  </section>
+
+  <!-- APPLICATION -->
+  <section id="appPage" class="app-shell hidden">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="brand">PodSense</div>
+        <div class="topbar-title">Podcast Sentiment and Topic Analyzer</div>
+      </div>
+
+      <div class="topbar-right">
+        <span id="userBadge" class="user-badge"></span>
+        <button id="themeBtn" class="btn btn-secondary">🌙 Dark</button>
+        <button id="logoutBtn" class="btn btn-danger">Logout</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <button class="nav-btn active" data-section="dashboardSection">
+          📊 Dashboard
+        </button>
+
+        <button class="nav-btn" data-section="analyzerSection">
+          🎙 Analyze Podcast
+        </button>
+
+        <button class="nav-btn" data-section="historySection">
+          📝 History
+        </button>
+
+        <button class="nav-btn" data-section="profileSection">
+          👤 Profile
+        </button>
+      </aside>
+
+      <main class="content">
+        <!-- DASHBOARD -->
+        <section id="dashboardSection" class="app-section">
+          <div class="page-header">
+            <div>
+              <h1>Podcast Dashboard</h1>
+              <p>View transcript analysis statistics and topic trends.</p>
+            </div>
+
+            <button id="newAnalysisBtn" class="btn btn-primary">
+              Analyze New Podcast
+            </button>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">ANALYSES</div>
+              <div id="analysisCount" class="stat-value">0</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-label">WORDS ANALYZED</div>
+              <div id="wordsAnalyzed" class="stat-value" style="color: var(--primary);">
+                0
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-label">POSITIVE EPISODES</div>
+              <div id="positiveCount" class="stat-value" style="color: var(--positive);">
+                0
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-label">TOP TOPIC</div>
+              <div id="topTopic" class="stat-value" style="font-size: 21px; color: var(--warning);">
+                -
+              </div>
+            </div>
+          </div>
+
+          <div class="main-grid">
+            <div class="card">
+              <h2>Sentiment overview</h2>
+              <p class="card-subtitle">
+                Sentiment distribution across analyzed podcast transcripts.
+              </p>
+
+              <div class="topic-list">
+                <div class="topic-row">
+                  <span>Positive</span>
+                  <div class="bar">
+                    <div id="positiveBar" class="bar-fill" style="width: 0%; background: var(--positive);"></div>
+                  </div>
+                  <strong id="positivePercent">0%</strong>
+                </div>
+
+                <div class="topic-row">
+                  <span>Negative</span>
+                  <div class="bar">
+                    <div id="negativeBar" class="bar-fill" style="width: 0%; background: var(--negative);"></div>
+                  </div>
+                  <strong id="negativePercent">0%</strong>
+                </div>
+
+                <div class="topic-row">
+                  <span>Neutral</span>
+                  <div class="bar">
+                    <div id="neutralBar" class="bar-fill" style="width: 0%; background: var(--neutral);"></div>
+                  </div>
+                  <strong id="neutralPercent">0%</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2>Latest analysis</h2>
+              <p class="card-subtitle">
+                The latest podcast transcript analyzed.
+              </p>
+
+              <div id="latestAnalysis">
+                <div class="empty-state">No podcast has been analyzed yet.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ANALYZER -->
+        <section id="analyzerSection" class="app-section hidden">
+          <div class="page-header">
+            <div>
+              <h1>Analyze Podcast</h1>
+              <p>
+                Paste a transcript, upload a text file, or use your microphone.
+              </p>
+            </div>
+          </div>
+
+          <div class="main-grid">
+            <div class="card">
+              <h2>Podcast transcript</h2>
+              <p class="card-subtitle">
+                Add an episode title and transcript to begin NLP analysis.
+              </p>
+
+              <div class="form-group">
+                <label for="episodeTitle">Episode title</label>
+                <input
+                  id="episodeTitle"
+                  type="text"
+                  placeholder="Example: The Future of Cloud Computing"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="episodeCategory">Category</label>
+                <select id="episodeCategory">
+                  <option value="Technology">Technology</option>
+                  <option value="Education">Education</option>
+                  <option value="Business">Business</option>
+                  <option value="Health">Health</option>
+                  <option value="Environment">Environment</option>
+                  <option value="Entertainment">Entertainment</option>
+                  <option value="General">General</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="speechLanguage">Speech language</label>
+                <select id="speechLanguage">
+                  <option value="en-IN">English - India</option>
+                  <option value="en-US">English - United States</option>
+                  <option value="ta-IN">Tamil - India</option>
+                  <option value="hi-IN">Hindi - India</option>
+                  <option value="te-IN">Telugu - India</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="transcriptText">Transcript</label>
+                <textarea
+                  id="transcriptText"
+                  placeholder="Paste or speak the podcast transcript here..."
+                ></textarea>
+              </div>
+
+              <div class="button-row">
+                <button id="startSpeechBtn" class="btn btn-primary">
+                  🎙 Start Speaking
+                </button>
+
+                <button id="stopSpeechBtn" class="btn btn-danger" disabled>
+                  ⏹ Stop
+                </button>
+
+                <label class="file-label">
+                  📄 Upload TXT
+                  <input id="fileInput" type="file" accept=".txt" />
+                </label>
+
+                <button id="sampleBtn" class="btn btn-secondary">
+                  Use Sample
+                </button>
+
+                <button id="clearBtn" class="btn btn-secondary">
+                  Clear
+                </button>
+              </div>
+
+              <div class="record-status">
+                <span id="recordDot" class="record-dot"></span>
+                <span id="recordStatus">Microphone is ready.</span>
+              </div>
+
+              <div class="button-row">
+                <button id="analyzeBtn" class="btn btn-success">
+                  Analyze Podcast
+                </button>
+              </div>
+
+              <div id="analyzerMessage" class="message"></div>
+            </div>
+
+            <div class="card">
+              <h2>Analysis summary</h2>
+              <p class="card-subtitle">
+                Main NLP results from the current podcast transcript.
+              </p>
+
+              <div id="summaryResult" class="result-box">
+                <div class="empty-state">
+                  Sentiment, topics, keywords, and statistics will appear here.
+                </div>
+              </div>
+
+              <div class="button-row">
+                <button id="readSummaryBtn" class="btn btn-secondary" disabled>
+                  🔊 Read Summary
+                </button>
+
+                <button id="copyTranscriptBtn" class="btn btn-secondary" disabled>
+                  📋 Copy Transcript
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="main-grid">
+            <div class="card">
+              <h2>Topic analysis</h2>
+              <p class="card-subtitle">
+                Topics detected from the transcript.
+              </p>
+
+              <div id="topicResult" class="result-box">
+                <div class="empty-state">Topic results will appear here.</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2>Sentiment timeline</h2>
+              <p class="card-subtitle">
+                Sentiment estimated sentence by sentence.
+              </p>
+
+              <div id="timelineResult" class="timeline">
+                <div class="empty-state">Timeline results will appear here.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Transcript viewer</h2>
+            <p class="card-subtitle">
+              Search for a word or phrase inside the analyzed transcript.
+            </p>
+
+            <div class="button-row" style="margin-top: 0;">
+              <input
+                id="transcriptSearch"
+                type="search"
+                placeholder="Find text in transcript..."
+              />
+            </div>
+
+            <div id="transcriptViewer" class="result-box" style="margin-top: 15px;">
+              <div class="empty-state">The transcript will appear here.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- HISTORY -->
+        <section id="historySection" class="app-section hidden">
+          <div class="page-header">
+            <div>
+              <h1>Analysis History</h1>
+              <p>Review previous podcast transcript analyses.</p>
+            </div>
+
+            <button id="exportBtn" class="btn btn-primary">
+              Export CSV
+            </button>
+          </div>
+
+          <div class="card">
+            <button id="clearHistoryBtn" class="btn btn-danger">
+              Clear History
+            </button>
+
+            <div id="historyList" class="history-list" style="margin-top: 18px;"></div>
+          </div>
+        </section>
+
+        <!-- PROFILE -->
+        <section id="profileSection" class="app-section hidden">
+          <div class="page-header">
+            <div>
+              <h1>Profile and Security</h1>
+              <p>Update your profile and change your demo password.</p>
+            </div>
+          </div>
+
+          <div class="main-grid">
+            <div class="card">
+              <h2>Profile information</h2>
+              <p class="card-subtitle">
+                These values are stored only in this browser.
+              </p>
+
+              <div class="profile-grid">
+                <div class="form-group">
+                  <label for="profileName">Name</label>
+                  <input id="profileName" type="text" />
+                </div>
+
+                <div class="form-group">
+                  <label for="profileEmail">Email</label>
+                  <input id="profileEmail" type="email" readonly />
+                </div>
+              </div>
+
+              <button id="saveProfileBtn" class="btn btn-primary">
+                Save Profile
+              </button>
+
+              <div id="profileMessage" class="message"></div>
+            </div>
+
+            <div class="card">
+              <h2>Change password</h2>
+              <p class="card-subtitle">
+                Use at least six characters.
+              </p>
+
+              <form id="passwordForm">
+                <div class="form-group">
+                  <label for="currentPassword">Current password</label>
+                  <input id="currentPassword" type="password" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="newPassword">New password</label>
+                  <input id="newPassword" type="password" minlength="6" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="confirmPassword">Confirm new password</label>
+                  <input id="confirmPassword" type="password" minlength="6" required />
+                </div>
+
+                <button class="btn btn-warning" type="submit">
+                  Change Password
+                </button>
+
+                <div id="passwordMessage" class="message"></div>
+              </form>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Security note</h2>
+            <p class="note">
+              This is a browser-only educational project. Do not use it for
+              confidential podcast content or real passwords. A production
+              version should use secure authentication, backend storage,
+              encryption, HTTPS, and access control.
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </section>
+
+  <script>
+    "use strict";
+
+    const KEYS = {
+      user: "podcast_analyzer_user_v1",
+      session: "podcast_analyzer_session_v1",
+      theme: "podcast_analyzer_theme_v1",
+      analyses: "podcast_analyzer_analyses_v1"
+    };
+
+    const DEFAULT_USER = {
+      name: "Demo Podcast User",
+      email: "demo@podcast.com",
+      password: "Podcast@123"
+    };
+
+    const STOPWORDS = new Set([
+      "the", "a", "an", "is", "are", "was", "were", "be", "been",
+      "to", "of", "in", "on", "for", "with", "and", "or", "but",
+      "this", "that", "these", "those", "it", "as", "at", "by",
+      "from", "we", "they", "you", "i", "our", "your", "their",
+      "have", "has", "had", "will", "would", "can", "could",
+      "about", "very", "more", "also", "just", "than", "then",
+      "into", "how", "what", "when", "where", "who", "why"
+    ]);
+
+    const TOPIC_KEYWORDS = {
+      Technology: [
+        "technology", "software", "computer", "digital", "artificial",
+        "intelligence", "machine", "learning", "algorithm", "programming",
+        "code", "developer", "internet", "app", "data"
+      ],
+      Cloud: [
+        "cloud", "docker", "server", "container", "deployment", "aws",
+        "azure", "storage", "database", "kubernetes", "scaling"
+      ],
+      NLP: [
+        "nlp", "language", "speech", "text", "sentiment", "translation",
+        "transcription", "emotion", "chatbot", "token", "model"
+      ],
+      Education: [
+        "student", "school", "college", "education", "learning", "teacher",
+        "course", "exam", "assignment", "classroom", "university"
+      ],
+      Business: [
+        "business", "company", "market", "customer", "product", "sales",
+        "startup", "money", "finance", "management", "team"
+      ],
+      Health: [
+        "health", "medical", "doctor", "hospital", "fitness", "mental",
+        "stress", "exercise", "patient", "sleep", "wellness"
+      ],
+      Environment: [
+        "climate", "environment", "solar", "energy", "renewable", "wind",
+        "pollution", "sustainability", "green", "carbon", "electricity"
+      ],
+      Entertainment: [
+        "movie", "music", "film", "actor", "show", "podcast", "game",
+        "story", "book", "artist", "media"
+      ]
+    };
+
+    let currentUser = null;
+    let recognition = null;
+    let recognizing = false;
+    let currentAnalysis = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    function readJSON(key, fallback) {
+      try {
+        const value = localStorage.getItem(key);
+        return value ? JSON.parse(value) : fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function writeJSON(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function getUser() {
+      const user = readJSON(KEYS.user, null);
+
+      if (!user) {
+        writeJSON(KEYS.user, DEFAULT_USER);
+        return { ...DEFAULT_USER };
+      }
+
+      return user;
+    }
+
+    function getAnalyses() {
+      return readJSON(KEYS.analyses, []);
+    }
+
+    function setAnalyses(analyses) {
+      writeJSON(KEYS.analyses, analyses);
+    }
+
+    function showMessage(id, text, type) {
+      const element = $(id);
+      element.textContent = text;
+      element.className = `message ${type}`;
+    }
+
+    function clearMessage(id) {
+      $(id).textContent = "";
+      $(id).className = "message";
+    }
+
+    function escapeHTML(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatDate(date) {
+      return new Date(date).toLocaleString();
+    }
+
+    function applyTheme() {
+      const theme = localStorage.getItem(KEYS.theme) || "light";
+      document.body.classList.toggle("dark", theme === "dark");
+      $("themeBtn").textContent =
+        theme === "dark" ? "☀️ Light" : "🌙 Dark";
+    }
+
+    function toggleTheme() {
+      const dark = document.body.classList.contains("dark");
+      localStorage.setItem(KEYS.theme, dark ? "light" : "dark");
+      applyTheme();
+    }
+
+    function showLogin() {
+      $("loginPage").classList.remove("hidden");
+      $("appPage").classList.add("hidden");
+    }
+
+    function showApp() {
+      $("loginPage").classList.add("hidden");
+      $("appPage").classList.remove("hidden");
+
+      currentUser = getUser();
+
+      $("userBadge").textContent =
+        `${currentUser.name} • ${currentUser.email}`;
+
+      loadProfile();
+      updateDashboard();
+      renderHistory();
+      applyTheme();
+    }
+
+    function login(email, password) {
+      const user = getUser();
+
+      if (
+        email.trim().toLowerCase() === user.email.toLowerCase() &&
+        password === user.password
+      ) {
+        currentUser = user;
+        localStorage.setItem(KEYS.session, user.email);
+        showApp();
+        return true;
+      }
+
+      return false;
+    }
+
+    function logout() {
+      localStorage.removeItem(KEYS.session);
+      currentUser = null;
+      showLogin();
+    }
+
+    function setupSpeechRecognition() {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        $("startSpeechBtn").disabled = true;
+        $("recordStatus").textContent =
+          "Speech recognition is unavailable. Paste a transcript manually.";
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = $("speechLanguage").value;
+
+      recognition.onstart = () => {
+        recognizing = true;
+        $("startSpeechBtn").disabled = true;
+        $("stopSpeechBtn").disabled = false;
+        $("recordDot").classList.add("active");
+        $("recordStatus").textContent = "Listening... speak the transcript.";
+      };
+
+      recognition.onresult = (event) => {
+        let finalText = "";
+        let interimText = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+
+          if (event.results[i].isFinal) {
+            finalText += transcript + " ";
+          } else {
+            interimText += transcript;
+          }
+        }
+
+        const currentText = $("transcriptText").value
+          .replace(/\s*\[speaking\]/gi, "")
+          .trim();
+
+        if (finalText) {
+          $("transcriptText").value =
+            `${currentText} ${finalText}`.trim();
+        }
+
+        if (interimText) {
+          $("transcriptText").value =
+            `${currentText} ${interimText} [speaking]`.trim();
+        }
+      };
+
+      recognition.onerror = (event) => {
+        recognizing = false;
+        $("startSpeechBtn").disabled = false;
+        $("stopSpeechBtn").disabled = true;
+        $("recordDot").classList.remove("active");
+        $("recordStatus").textContent = `Speech error: ${event.error}`;
+      };
+
+      recognition.onend = () => {
+        recognizing = false;
+        $("startSpeechBtn").disabled = false;
+        $("stopSpeechBtn").disabled = true;
+        $("recordDot").classList.remove("active");
+
+        $("transcriptText").value = $("transcriptText").value
+          .replace(/\s*\[speaking\]/gi, "")
+          .trim();
+
+        if (!$("recordStatus").textContent.startsWith("Speech error")) {
+          $("recordStatus").textContent = "Microphone is ready.";
+        }
+      };
+    }
+
+    function startSpeech() {
+      if (!recognition) {
+        showMessage(
+          "analyzerMessage",
+          "Speech recognition is unavailable. Paste a transcript manually.",
+          "error"
+        );
+        return;
+      }
+
+      recognition.lang = $("speechLanguage").value;
+
+      try {
+        recognition.start();
+      } catch {
+        showMessage(
+          "analyzerMessage",
+          "Speech recognition is already running.",
+          "error"
+        );
+      }
+    }
+
+    function stopSpeech() {
+      if (recognition && recognizing) {
+        recognition.stop();
+      }
+    }
+
+    function tokenize(text) {
+      return text
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, " ")
+        .split(/\s+/)
+        .filter(Boolean);
+    }
+
+    function getKeywords(text) {
+      const counts = {};
+
+      tokenize(text).forEach((word) => {
+        if (word.length >= 4 && !STOPWORDS.has(word)) {
+          counts[word] = (counts[word] || 0) + 1;
+        }
+      });
+
+      return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 12)
+        .map(([word, count]) => ({ word, count }));
+    }
+
+    function getSentiment(text) {
+      const positiveWords = [
+        "good", "great", "excellent", "amazing", "positive", "success",
+        "successful", "happy", "hope", "hopeful", "improve", "improved",
+        "benefit", "benefits", "enjoy", "enjoyed", "useful", "helpful",
+        "exciting", "wonderful", "strong", "progress", "opportunity",
+        "solution", "solved", "achieve", "achieved", "growth"
+      ];
+
+      const negativeWords = [
+        "bad", "poor", "negative", "problem", "problems", "difficult",
+        "failure", "failed", "sad", "angry", "worry", "worried", "risk",
+        "risks", "danger", "dangerous", "hate", "terrible", "confusing",
+        "slow", "loss", "challenge", "challenging", "issue", "issues"
+      ];
+
+      const lower = text.toLowerCase();
+      let score = 0;
+
+      positiveWords.forEach((word) => {
+        if (lower.includes(word)) score++;
+      });
+
+      negativeWords.forEach((word) => {
+        if (lower.includes(word)) score--;
+      });
+
+      let label = "Neutral";
+
+      if (score > 0) label = "Positive";
+      if (score < 0) label = "Negative";
+
+      const confidence = Math.min(98, 55 + Math.abs(score) * 8);
+
+      return {
+        label,
+        score,
+        confidence
+      };
+    }
+
+    function classifyTopics(text) {
+      const lower = text.toLowerCase();
+      const topicScores = {};
+
+      Object.entries(TOPIC_KEYWORDS).forEach(([topic, words]) => {
+        const count = words.reduce(
+          (sum, word) => sum + (lower.includes(word) ? 1 : 0),
+          0
+        );
+
+        if (count > 0) {
+          topicScores[topic] = count;
+        }
+      });
+
+      return Object.entries(topicScores)
+        .sort((a, b) => b[1] - a[1])
+        .map(([topic, count]) => ({
+          topic,
+          count,
+          percentage: Math.min(100, count * 20)
+        }));
+    }
+
+    function splitSentences(text) {
+      return text
+        .split(/[.!?]+/)
+        .map((sentence) => sentence.trim())
+        .filter((sentence) => sentence.length > 8);
+    }
+
+    function getTimeline(text) {
+      return splitSentences(text)
+        .slice(0, 12)
+        .map((sentence) => {
+          const sentiment = getSentiment(sentence);
+
+          return {
+            sentence,
+            sentiment: sentiment.label
+          };
+        });
+    }
+
+    function getHighlights(text) {
+      const sentences = splitSentences(text);
+
+      return sentences
+        .map((sentence) => {
+          const sentiment = getSentiment(sentence);
+          const words = tokenize(sentence).length;
+
+          return {
+            sentence,
+            sentiment: sentiment.label,
+            score: Math.abs(sentiment.score) + words / 100
+          };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+    }
+
+    function createChapters(text, topics) {
+      const sentences = splitSentences(text);
+
+      if (!sentences.length) {
+        return [];
+      }
+
+      const chapterCount = Math.min(
+        5,
+        Math.max(1, Math.ceil(sentences.length / 4))
+      );
+
+      const chapters = [];
+
+      for (let i = 0; i < chapterCount; i++) {
+        const start = Math.floor((i * sentences.length) / chapterCount);
+        const end = Math.floor(((i + 1) * sentences.length) / chapterCount);
+
+        const chapterText = sentences.slice(start, end).join(". ");
+
+        chapters.push({
+          title: topics[i]?.topic || `Chapter ${i + 1}`,
+          text: chapterText
+        });
+      }
+
+      return chapters;
+    }
+
+    function analyzeTranscript(title, category, text) {
+      const sentiment = getSentiment(text);
+      const keywords = getKeywords(text);
+      const topics = classifyTopics(text);
+      const timeline = getTimeline(text);
+      const highlights = getHighlights(text);
+      const chapters = createChapters(text, topics);
+
+      return {
+        title,
+        category,
+        text,
+        sentiment: sentiment.label,
+        sentimentScore: sentiment.score,
+        confidence: sentiment.confidence,
+        keywords,
+        topics,
+        timeline,
+        highlights,
+        chapters,
+        wordCount: tokenize(text).length,
+        sentenceCount: splitSentences(text).length,
+        readingMinutes: Math.max(
+          1,
+          Math.ceil(tokenize(text).length / 150)
+        )
+      };
+    }
+
+    function sentimentClass(sentiment) {
+      if (sentiment === "Positive") return "badge-positive";
+      if (sentiment === "Negative") return "badge-negative";
+      return "badge-neutral";
+    }
+
+    function renderSummary(result) {
+      const keywords = result.keywords.length
+        ? result.keywords
+            .map(
+              (item) =>
+                `<span class="badge badge-info">${escapeHTML(item.word)} (${item.count})</span>`
+            )
+            .join(" ")
+        : "No important keywords found.";
+
+      const topics = result.topics.length
+        ? result.topics
+            .slice(0, 5)
+            .map(
+              (item) =>
+                `<span class="badge badge-score">${escapeHTML(item.topic)}</span>`
+            )
+            .join(" ")
+        : "No clear topics found.";
+
+      $("summaryResult").innerHTML = `
+        <div>
+          <span class="badge ${sentimentClass(result.sentiment)}">
+            ${escapeHTML(result.sentiment)}
+          </span>
+
+          <span class="badge badge-info">
+            Confidence: ${result.confidence}%
+          </span>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-item">
+            <small>Word count</small>
+            <strong>${result.wordCount}</strong>
+          </div>
+
+          <div class="result-item">
+            <small>Sentence count</small>
+            <strong>${result.sentenceCount}</strong>
+          </div>
+
+          <div class="result-item">
+            <small>Reading time</small>
+            <strong>${result.readingMinutes} minute(s)</strong>
+          </div>
+
+          <div class="result-item">
+            <small>Sentiment score</small>
+            <strong>${result.sentimentScore}</strong>
+          </div>
+        </div>
+
+        <div style="margin-top: 18px;">
+          <small style="display: block; margin-bottom: 8px; color: var(--muted);">
+            Main topics
+          </small>
+          ${topics}
+        </div>
+
+        <div style="margin-top: 18px;">
+          <small style="display: block; margin-bottom: 8px; color: var(--muted);">
+            Keywords
+          </small>
+          <div class="keyword-list">${keywords}</div>
+        </div>
+      `;
+
+      $("readSummaryBtn").disabled = false;
+      $("copyTranscriptBtn").disabled = false;
+    }
+
+    function renderTopics(result) {
+      if (!result.topics.length) {
+        $("topicResult").innerHTML =
+          `<div class="empty-state">No clear topics detected.</div>`;
+        return;
+      }
+
+      $("topicResult").innerHTML = `
+        <div class="topic-list">
+          ${result.topics
+            .map(
+              (item) => `
+                <div class="topic-row">
+                  <span>${escapeHTML(item.topic)}</span>
+
+                  <div class="bar">
+                    <div
+                      class="bar-fill"
+                      style="width: ${item.percentage}%"
+                    ></div>
+                  </div>
+
+                  <strong>${item.count}</strong>
+                </div>
+              `
+            )
+            .join("")}
+        </div>
+
+        <div style="margin-top: 18px;">
+          <small style="color: var(--muted);">
+            Topics are estimated from matching NLP keywords.
+          </small>
+        </div>
+      `;
+    }
+
+    function renderTimeline(result) {
+      if (!result.timeline.length) {
+        $("timelineResult").innerHTML =
+          `<div class="empty-state">Not enough sentences for a timeline.</div>`;
+        return;
+      }
+
+      $("timelineResult").innerHTML = result.timeline
+        .map(
+          (item, index) => `
+            <div
+              class="timeline-item"
+              style="border-left-color: ${
+                item.sentiment === "Positive"
+                  ? "var(--positive)"
+                  : item.sentiment === "Negative"
+                    ? "var(--negative)"
+                    : "var(--neutral)"
+              };"
+            >
+              <strong>
+                Segment ${index + 1}
+                <span class="badge ${sentimentClass(item.sentiment)}">
+                  ${escapeHTML(item.sentiment)}
+                </span>
+              </strong>
+
+              <span>${escapeHTML(item.sentence)}</span>
+            </div>
+          `
+        )
+        .join("");
+    }
+
+    function renderChapters(result) {
+      const chapters = result.chapters
+        .map(
+          (chapter, index) => `
+            <div class="timeline-item">
+              <strong>
+                Chapter ${index + 1}: ${escapeHTML(chapter.title)}
+              </strong>
+              <span>${escapeHTML(chapter.text)}</span>
+            </div>
+          `
+        )
+        .join("");
+
+      return chapters || `<div class="empty-state">No chapters generated.</div>`;
+    }
+
+    function renderHighlights(result) {
+      return result.highlights.length
+        ? result.highlights
+            .map(
+              (item) => `
+                <div class="timeline-item">
+                  <strong>
+                    <span class="badge ${sentimentClass(item.sentiment)}">
+                      ${escapeHTML(item.sentiment)}
+                    </span>
+                  </strong>
+                  <span>${escapeHTML(item.sentence)}</span>
+                </div>
+              `
+            )
+            .join("")
+        : `<div class="empty-state">No highlights found.</div>`;
+    }
+
+    function renderTranscriptViewer() {
+      if (!currentAnalysis) {
+        $("transcriptViewer").innerHTML =
+          `<div class="empty-state">The transcript will appear here.</div>`;
+        return;
+      }
+
+      const searchTerm = $("transcriptSearch").value.trim();
+
+      if (!searchTerm) {
+        $("transcriptViewer").textContent = currentAnalysis.text;
+        return;
+      }
+
+      const escapedText = escapeHTML(currentAnalysis.text);
+      const escapedTerm = searchTerm.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&"
+      );
+
+      $("transcriptViewer").innerHTML = escapedText.replace(
+        new RegExp(`(${escapedTerm})`, "gi"),
+        `<span class="transcript-mark">$1</span>`
+      );
+    }
+
+    function analyzeAndSave() {
+      const title = $("episodeTitle").value.trim();
+      const category = $("episodeCategory").value;
+      const text = $("transcriptText").value
+        .replace(/\s*\[speaking\]/gi, "")
+        .trim();
+
+      if (!title) {
+        showMessage(
+          "analyzerMessage",
+          "Please enter an episode title.",
+          "error"
+        );
+        return;
+      }
+
+      if (!text) {
+        showMessage(
+          "analyzerMessage",
+          "Please paste, upload, or speak a transcript.",
+          "error"
+        );
+        return;
+      }
+
+      if (text.length < 40) {
+        showMessage(
+          "analyzerMessage",
+          "Please provide a longer transcript for meaningful analysis.",
+          "error"
+        );
+        return;
+      }
+
+      const result = analyzeTranscript(title, category, text);
+
+      currentAnalysis = {
+        id: Date.now(),
+        ...result,
+        createdAt: new Date().toISOString(),
+        userEmail: currentUser.email
+      };
+
+      const analyses = getAnalyses();
+      analyses.unshift(currentAnalysis);
+      setAnalyses(analyses);
+
+      renderSummary(currentAnalysis);
+      renderTopics(currentAnalysis);
+      renderTimeline(currentAnalysis);
+      renderTranscriptViewer();
+      updateDashboard();
+      renderHistory();
+
+      showMessage(
+        "analyzerMessage",
+        "Podcast transcript analyzed and saved successfully.",
+        "success"
+      );
+    }
+
+    function updateDashboard() {
+      const analyses = getAnalyses().filter(
+        (item) => item.userEmail === currentUser?.email
+      );
+
+      const total = analyses.length;
+      const words = analyses.reduce(
+        (sum, item) => sum + item.wordCount,
+        0
+      );
+
+      const positive = analyses.filter(
+        (item) => item.sentiment === "Positive"
+      ).length;
+
+      const sentimentCount = {
+        Positive: positive,
+        Negative: analyses.filter(
+          (item) => item.sentiment === "Negative"
+        ).length,
+        Neutral: analyses.filter(
+          (item) => item.sentiment === "Neutral"
+        ).length
+      };
+
+      const topicCounts = {};
+
+      analyses.forEach((item) => {
+        (item.topics || []).forEach((topic) => {
+          topicCounts[topic.topic] =
+            (topicCounts[topic.topic] || 0) + topic.count;
+        });
+      });
+
+      const topTopic = Object.entries(topicCounts).sort(
+        (a, b) => b[1] - a[1]
+      )[0];
+
+      $("analysisCount").textContent = total;
+      $("wordsAnalyzed").textContent = words;
+      $("positiveCount").textContent = positive;
+      $("topTopic").textContent = topTopic ? topTopic[0] : "-";
+
+      const percentage = (value) =>
+        total ? Math.round((value / total) * 100) : 0;
+
+      const positivePercent = percentage(sentimentCount.Positive);
+      const negativePercent = percentage(sentimentCount.Negative);
+      const neutralPercent = percentage(sentimentCount.Neutral);
+
+      $("positiveBar").style.width = `${positivePercent}%`;
+      $("negativeBar").style.width = `${negativePercent}%`;
+      $("neutralBar").style.width = `${neutralPercent}%`;
+
+      $("positivePercent").textContent = `${positivePercent}%`;
+      $("negativePercent").textContent = `${negativePercent}%`;
+      $("neutralPercent").textContent = `${neutralPercent}%`;
+
+      if (analyses.length) {
+        renderLatestAnalysis(analyses[0]);
+      } else {
+        $("latestAnalysis").innerHTML =
+          `<div class="empty-state">No podcast has been analyzed yet.</div>`;
+      }
+    }
+
+    function renderLatestAnalysis(result) {
+      $("latestAnalysis").innerHTML = `
+        <span class="badge ${sentimentClass(result.sentiment)}">
+          ${escapeHTML(result.sentiment)}
+        </span>
+
+        <span class="badge badge-info">
+          ${escapeHTML(result.category)}
+        </span>
+
+        <h3 style="margin: 14px 0 8px;">
+          ${escapeHTML(result.title)}
+        </h3>
+
+        <p style="line-height: 1.6; margin-bottom: 10px;">
+          ${escapeHTML(truncate(result.text, 180))}
+        </p>
+
+        <div class="history-meta">
+          <span>Words: ${result.wordCount}</span>
+          <span>Topics: ${(result.topics || [])
+            .slice(0, 3)
+            .map((topic) => topic.topic)
+            .join(", ") || "None"}</span>
+          <span>${formatDate(result.createdAt)}</span>
+        </div>
+      `;
+    }
+
+    function renderHistory() {
+      const list = $("historyList");
+
+      const analyses = getAnalyses().filter(
+        (item) => item.userEmail === currentUser?.email
+      );
+
+      if (!analyses.length) {
+        list.innerHTML =
+          `<div class="empty-state">No podcast analyses found.</div>`;
+        return;
+      }
+
+      list.innerHTML = analyses
+        .map(
+          (item) => `
+            <article class="history-item">
+              <div class="history-head">
+                <div class="history-title">
+                  ${escapeHTML(item.title)}
+                </div>
+
+                <button
+                  class="btn btn-danger delete-analysis"
+                  data-id="${item.id}"
+                >
+                  Delete
+                </button>
+              </div>
+
+              <div style="margin-bottom: 10px;">
+                <span class="badge ${sentimentClass(item.sentiment)}">
+                  ${escapeHTML(item.sentiment)}
+                </span>
+
+                <span class="badge badge-info">
+                  ${escapeHTML(item.category)}
+                </span>
+              </div>
+
+              <p style="line-height: 1.6; margin-bottom: 11px;">
+                ${escapeHTML(truncate(item.text, 260))}
+              </p>
+
+              <div class="history-meta">
+                <span>Words: ${item.wordCount}</span>
+                <span>Sentences: ${item.sentenceCount}</span>
+                <span>Reading time: ${item.readingMinutes} min</span>
+                <span>Confidence: ${item.confidence}%</span>
+                <span>${formatDate(item.createdAt)}</span>
+              </div>
+            </article>
+          `
+        )
+        .join("");
+
+      document.querySelectorAll(".delete-analysis").forEach((button) => {
+        button.addEventListener("click", () => {
+          deleteAnalysis(Number(button.dataset.id));
+        });
+      });
+    }
+
+    function deleteAnalysis(id) {
+      const remaining = getAnalyses().filter((item) => item.id !== id);
+      setAnalyses(remaining);
+
+      if (currentAnalysis && currentAnalysis.id === id) {
+        currentAnalysis = null;
+      }
+
+      updateDashboard();
+      renderHistory();
+    }
+
+    function clearHistory() {
+      const userAnalyses = getAnalyses().filter(
+        (item) => item.userEmail === currentUser.email
+      );
+
+      if (!userAnalyses.length) return;
+
+      if (!confirm("Delete all podcast analysis history?")) return;
+
+      const remaining = getAnalyses().filter(
+        (item) => item.userEmail !== currentUser.email
+      );
+
+      setAnalyses(remaining);
+      currentAnalysis = null;
+      updateDashboard();
+      renderHistory();
+    }
+
+    function exportCSV() {
+      const analyses = getAnalyses().filter(
+        (item) => item.userEmail === currentUser.email
+      );
+
+      if (!analyses.length) {
+        alert("There are no analyses to export.");
+        return;
+      }
+
+      const headers = [
+        "Date",
+        "Title",
+        "Category",
+        "Sentiment",
+        "Confidence",
+        "Words",
+        "Sentences",
+        "Reading Time",
+        "Topics",
+        "Keywords"
+      ];
+
+      const rows = analyses.map((item) => [
+        formatDate(item.createdAt),
+        item.title,
+        item.category,
+        item.sentiment,
+        `${item.confidence}%`,
+        item.wordCount,
+        item.sentenceCount,
+        `${item.readingMinutes} minute(s)`,
+        (item.topics || []).map((topic) => topic.topic).join(" "),
+        (item.keywords || []).map((keyword) => keyword.word).join(" ")
+      ]);
+
+      const csv = [headers, ...rows]
+        .map((row) =>
+          row
+            .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+            .join(",")
+        )
+        .join("\n");
+
+      const blob = new Blob([csv], {
+        type: "text/csv;charset=utf-8;"
+      });
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "podcast-nlp-analysis.csv";
+      link.click();
+
+      URL.revokeObjectURL(url);
+    }
+
+    function readSummary() {
+      if (!currentAnalysis) return;
+
+      const topics = currentAnalysis.topics
+        .slice(0, 3)
+        .map((topic) => topic.topic)
+        .join(", ");
+
+      const summary =
+        `${currentAnalysis.title}. ` +
+        `The overall sentiment is ${currentAnalysis.sentiment}. ` +
+        `The main topics are ${topics || "general discussion"}. ` +
+        `The transcript contains ${currentAnalysis.wordCount} words.`;
+
+      speakText(summary);
+    }
+
+    function speakText(text) {
+      if (!("speechSynthesis" in window)) {
+        alert("Text-to-speech is not supported in this browser.");
+        return;
+      }
+
+      speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = $("speechLanguage").value;
+      utterance.rate = 0.95;
+
+      speechSynthesis.speak(utterance);
+    }
+
+    function copyTranscript() {
+      if (!currentAnalysis) return;
+
+      navigator.clipboard
+        .writeText(currentAnalysis.text)
+        .then(() => {
+          showMessage(
+            "analyzerMessage",
+            "Transcript copied to clipboard.",
+            "success"
+          );
+        })
+        .catch(() => {
+          showMessage(
+            "analyzerMessage",
+            "Unable to copy transcript.",
+            "error"
+          );
+        });
+    }
+
+    function loadProfile() {
+      $("profileName").value = currentUser.name;
+      $("profileEmail").value = currentUser.email;
+    }
+
+    function saveProfile() {
+      const name = $("profileName").value.trim();
+
+      if (!name) {
+        showMessage("profileMessage", "Name cannot be empty.", "error");
+        return;
+      }
+
+      const user = getUser();
+      user.name = name;
+      writeJSON(KEYS.user, user);
+
+      currentUser = user;
+
+      $("userBadge").textContent =
+        `${currentUser.name} • ${currentUser.email}`;
+
+      showMessage(
+        "profileMessage",
+        "Profile updated successfully.",
+        "success"
+      );
+    }
+
+    function changePassword(event) {
+      event.preventDefault();
+
+      const currentPassword = $("currentPassword").value;
+      const newPassword = $("newPassword").value;
+      const confirmPassword = $("confirmPassword").value;
+      const user = getUser();
+
+      if (currentPassword !== user.password) {
+        showMessage(
+          "passwordMessage",
+          "Current password is incorrect.",
+          "error"
+        );
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showMessage(
+          "passwordMessage",
+          "New password must have at least six characters.",
+          "error"
+        );
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showMessage(
+          "passwordMessage",
+          "New passwords do not match.",
+          "error"
+        );
+        return;
+      }
+
+      user.password = newPassword;
+      writeJSON(KEYS.user, user);
+      $("passwordForm").reset();
+
+      showMessage(
+        "passwordMessage",
+        "Password changed successfully.",
+        "success"
+      );
+    }
+
+    function showSection(sectionId) {
+      document.querySelectorAll(".app-section").forEach((section) => {
+        section.classList.toggle(
+          "hidden",
+          section.id !== sectionId
+        );
+      });
+
+      document.querySelectorAll(".nav-btn").forEach((button) => {
+        button.classList.toggle(
+          "active",
+          button.dataset.section === sectionId
+        );
+      });
+
+      if (sectionId === "dashboardSection") {
+        updateDashboard();
+      }
+
+      if (sectionId === "historySection") {
+        renderHistory();
+      }
+    }
+
+    function setupEvents() {
+      $("loginForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const email = $("loginEmail").value;
+        const password = $("loginPassword").value;
+
+        if (login(email, password)) {
+          clearMessage("loginMessage");
+        } else {
+          showMessage(
+            "loginMessage",
+            "Invalid email or password.",
+            "error"
+          );
+        }
+      });
+
+      $("logoutBtn").addEventListener("click", logout);
+      $("themeBtn").addEventListener("click", toggleTheme);
+
+      document.querySelectorAll(".nav-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+          showSection(button.dataset.section);
+        });
+      });
+
+      $("newAnalysisBtn").addEventListener("click", () => {
+        showSection("analyzerSection");
+        $("episodeTitle").focus();
+      });
+
+      $("speechLanguage").addEventListener("change", () => {
+        if (recognition) {
+          recognition.lang = $("speechLanguage").value;
+        }
+      });
+
+      $("startSpeechBtn").addEventListener("click", startSpeech);
+      $("stopSpeechBtn").addEventListener("click", stopSpeech);
+      $("analyzeBtn").addEventListener("click", analyzeAndSave);
+
+      $("sampleBtn").addEventListener("click", () => {
+        $("episodeTitle").value =
+          "The Future of Cloud Computing and NLP";
+
+        $("episodeCategory").value = "Technology";
+
+        $("transcriptText").value =
+          "Welcome to today's episode. We are discussing the future of cloud computing and natural language processing. Cloud platforms make it easier for developers to deploy applications, store data, and scale services. Docker and containers help teams create portable software environments. Natural language processing allows computers to understand text and speech. Sentiment analysis, translation, and speech recognition are becoming useful in education and customer support. There are still challenges such as privacy, cost, bias, and security. However, the opportunities are exciting, and students can build practical projects using open-source tools.";
+      });
+
+      $("clearBtn").addEventListener("click", () => {
+        $("episodeTitle").value = "";
+        $("transcriptText").value = "";
+        currentAnalysis = null;
+
+        $("summaryResult").innerHTML =
+          `<div class="empty-state">Sentiment, topics, keywords, and statistics will appear here.</div>`;
+
+        $("topicResult").innerHTML =
+          `<div class="empty-state">Topic results will appear here.</div>`;
+
+        $("timelineResult").innerHTML =
+          `<div class="empty-state">Timeline results will appear here.</div>`;
+
+        $("transcriptViewer").innerHTML =
+          `<div class="empty-state">The transcript will appear here.</div>`;
+
+        $("readSummaryBtn").disabled = true;
+        $("copyTranscriptBtn").disabled = true;
+
+        clearMessage("analyzerMessage");
+      });
+
+      $("fileInput").addEventListener("change", (event) => {
+        const file = event.target.files[0];
+
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          $("transcriptText").value = reader.result;
+          showMessage(
+            "analyzerMessage",
+            "Transcript file loaded successfully.",
+            "success"
+          );
+        };
+
+        reader.onerror = () => {
+          showMessage(
+            "analyzerMessage",
+            "Unable to read the selected file.",
+            "error"
+          );
+        };
+
+        reader.readAsText(file);
+      });
+
+      $("readSummaryBtn").addEventListener("click", readSummary);
+      $("copyTranscriptBtn").addEventListener("click", copyTranscript);
+
+      $("transcriptSearch").addEventListener(
+        "input",
+        renderTranscriptViewer
+      );
+
+      $("clearHistoryBtn").addEventListener("click", clearHistory);
+      $("exportBtn").addEventListener("click", exportCSV);
+
+      $("saveProfileBtn").addEventListener("click", saveProfile);
+      $("passwordForm").addEventListener("submit", changePassword);
+    }
+
+    function initialize() {
+      getUser();
+      setupEvents();
+      setupSpeechRecognition();
+      applyTheme();
+
+      const savedSession = localStorage.getItem(KEYS.session);
+      const savedUser = getUser();
+
+      if (savedSession === savedUser.email) {
+        currentUser = savedUser;
+        showApp();
+      } else {
+        showLogin();
+      }
+    }
+
+    initialize();
+  </script>
+</body>
+</html>
